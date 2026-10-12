@@ -1,0 +1,12 @@
+.{
+    .name = .nstandard,
+    .version = "0.1.0",
+    .fingerprint = 0x77d4676d4868c48,
+    .minimum_zig_version = "0.14.0",
+    .paths = .{
+        "build.zig",
+        "build.zig.zon",
+        "src",
+        "include",
+    },
+}
