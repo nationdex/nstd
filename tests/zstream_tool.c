@@ -6,7 +6,24 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <fcntl.h>
+#include <sys/stat.h>
 #include <zlib.h>
+#ifndef _WIN32
+#include <unistd.h>
+#endif
+
+static FILE *open_out(const char *path) {
+#ifdef _WIN32
+    FILE *f = fopen(path, "wb");
+#else
+    int fd = open(path, O_WRONLY | O_CREAT | O_TRUNC, S_IRUSR | S_IWUSR);
+    if (fd < 0) { perror(path); exit(2); }
+    FILE *f = fdopen(fd, "wb");
+#endif
+    if (!f) { perror(path); exit(2); }
+    return f;
+}
 
 static unsigned char *slurp(const char *path, size_t *n) {
     FILE *f = fopen(path, "rb");
@@ -28,7 +45,7 @@ int main(int argc, char **argv) {
         int level = atoi(argv[2]), wbits = atoi(argv[3]);
         size_t chunk = atol(argv[4]), flush_every = atol(argv[5]);
         unsigned char *in = slurp(argv[6], &in_n);
-        out = fopen(argv[7], "wb");
+        out = open_out(argv[7]);
         if (argc > 8) dict = slurp(argv[8], &dict_n);
         if (deflateInit2(&z, level, Z_DEFLATED, wbits, 8, Z_DEFAULT_STRATEGY) != Z_OK) return 3;
         if (dict && deflateSetDictionary(&z, dict, dict_n) != Z_OK) return 4;
@@ -53,7 +70,7 @@ int main(int argc, char **argv) {
         int wbits = atoi(argv[2]);
         size_t inchunk = atol(argv[3]), outchunk = atol(argv[4]);
         unsigned char *in = slurp(argv[5], &in_n);
-        out = fopen(argv[6], "wb");
+        out = open_out(argv[6]);
         if (argc > 7) dict = slurp(argv[7], &dict_n);
         if (inflateInit2(&z, wbits) != Z_OK) return 3;
         unsigned char *obuf = malloc(outchunk);
